@@ -36,6 +36,7 @@ void setup() {
     branches[i] = branch;
     delay(500);
   }
+  save("tree.png");
 }
 
 // generate a random trunk
