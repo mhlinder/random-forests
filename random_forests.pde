@@ -4,13 +4,13 @@ int w = 600,
     fg = 0;
 
 int pad = 50,
-    n = 15,
-    nBranch = 20;
+    n = 6,
+    nBranch = 15;
 
 float threshold = 0.5,
-      trunkWidth = .01*w,
-      rootWidth = .05*w,
-      stepLength = h / n,
+      trunkWidth = .01 * w,
+      rootWidth = .05 * w,
+      stepLength = .1 * h,
       stepSize = .05 * h,
       mid = .5*w;
 
@@ -20,15 +20,18 @@ float[][][] branches = new float[nBranch][n][2];
 void setup() {
   size(w+2*pad, h+2*pad);
   background(bg);
+  branch = randomTrunk();
 
   for (int i = 0; i < nBranch; i++) {
     // random starting point
     float r = random(0, 1);
-    if (i == 0 || r < .5) {
+
+    if (i == 0 || r < .7) {
       branch = randomTrunk();
     } else {
       int ix = floor(random(0, i));
-      branch = branches[i];
+      branch = branches[ix];
+      branch = jitter(branch);
     }
 
     drawBranch(branch);
@@ -65,6 +68,17 @@ float[][] randomTrunk() {
   }
 
   return trunk;
+}
+
+float[][] jitter(float[][] branch) {
+  float[][] newBranch = new float[branch.length][2];
+
+  for (int i = 0; i < branch.length; i++) {
+    newBranch[i][0] = branch[i][0] + random(-.1*stepSize, .1*stepSize);
+    newBranch[i][1] = branch[i][1];
+  }
+
+  return newBranch;
 }
 
 void drawBranch(float[][] branch) {
