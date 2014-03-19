@@ -3,44 +3,92 @@ int w = 600,
     bg = 255,
     fg = 0;
 
-int pad = 50;
+int pad = 50,
+    n = 600;
 
-float mid = .5*w;
-float trunkHeight = .8*h;
-  float trunkWidth = .01*w;
+float threshold = 0.5,
+      trunkWidth = .05*w,
+      stepWidth = .1*trunkWidth,
+      mid = .5*w;
+
+float[][] branch;
 
 void setup() {
   size(w+2*pad, h+2*pad);
   background(bg);
+
+  translate(pad, pad);
+
+  // random starting point
+  branch = randomTrunk();
+  drawBranch(branch);
 }
 
 void draw() {
-  stroke(fg);
   translate(pad, pad);
 
-  strokeWeight(1);
+  branch = randomTrunk();
+  drawBranch(branch);
+  delay(1000);
+}
 
-  // random starting point
-  float root = random(.4*w, .6*w);
-  float threshold = random(0, 1);
-  float y = h;
-  int count = h;
-  float change;
-  if (random(0, 1) > 0.5) {
-    change = -1;
-  } else {
-    change = 1;
-  }
-  while (count > 0) {
-    count--;
+// generate a random trunk
+float[][] randomTrunk() {
+  float[][] trunk = new float[n][n];
+  trunk[0][0] = random(mid - trunkWidth, mid + trunkWidth);
+  trunk[0][1] = h;
 
-    point(root, y);
-    println(root, y);
+  // random walk within (mid-trunkWidth, mid+trunkWidth)
+  for (int i = 1; i < n; i++) {
     float r = random(0, 1);
-    if (r > threshold) {
-      root += change;
+
+    if (r < threshold) {
+      if (trunk[i-1][0] - stepWidth >= mid - trunkWidth) {
+        trunk[i][0] = trunk[i-1][0] - stepWidth;
+      } else {
+        trunk[i][0] = trunk[i-1][0] + stepWidth;
+      }
     } else {
-      y--;
+      if (trunk[i-1][0] + stepWidth <= mid + trunkWidth) {
+        trunk[i][0] = trunk[i-1][0] + stepWidth;
+      } else {
+        trunk[i][0] = trunk[i-1][0] - stepWidth;
+      }
     }
+
+    trunk[i][1] = trunk[i-1][1] - 1;
+  }
+
+  return trunk;
+}
+
+// jitter a given branch, for visual overlap
+float[][] jitter(float[][] branch) {
+
+  float[][] newBranch = new float[n][n];
+
+  for (int i = 0; i < branch.length; i++) {
+    float r = random(0, 1);
+
+    float lo = .33;
+    float hi = .66;
+
+    if (r < lo) {
+      newBranch[i][0] = branch[i][0] - stepWidth;
+    } else if (r > hi) {
+      newBranch[i][0] = branch[i][0] + stepWidth;
+    } else {
+      newBranch[i][0] = branch[i][0];
+    }
+    newBranch[i][1] = branch[i][1];
+
+  }
+  return newBranch;
+}
+
+void drawBranch(float[][] branch) {
+  strokeWeight(5);
+  for (int i = 1; i < branch.length; i++) {
+    line(branch[i-1][0], branch[i-1][1], branch[i][0], branch[i][1]);
   }
 }
