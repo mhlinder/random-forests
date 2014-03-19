@@ -4,14 +4,18 @@ int w = 600,
     fg = 0;
 
 int pad = 50,
-    n = 600;
+    n = 500,
+    nBranch = 100;
 
 float threshold = 0.5,
-      trunkWidth = .05*w,
-      stepWidth = .1*trunkWidth,
+      trunkWidth = .01*w,
+      stepWidth = .5*trunkWidth,
       mid = .5*w;
 
 float[][] branch;
+float[][][] branches = new float[nBranch][n][2];
+
+int branchCount = 0;
 
 void setup() {
   size(w+2*pad, h+2*pad);
@@ -21,20 +25,34 @@ void setup() {
 
   // random starting point
   branch = randomTrunk();
+  branches[branchCount] = branch;
+  branchCount++;
   drawBranch(branch);
 }
 
 void draw() {
   translate(pad, pad);
 
-  branch = randomTrunk();
+  float r = random(0, 1);
+  if (r < 0.5) {
+    branch = randomTrunk();
+  } else {
+    int ix = floor(random(0, 1) * branchCount);
+    branch = branches[ix];
+  }
+  branch = jitter(branch);
+  branch = branchOut(branch);
+
+  branches[branchCount] = branch;
+  branchCount++;
+
   drawBranch(branch);
   delay(1000);
 }
 
 // generate a random trunk
 float[][] randomTrunk() {
-  float[][] trunk = new float[n][n];
+  float[][] trunk = new float[n][2];
   trunk[0][0] = random(mid - trunkWidth, mid + trunkWidth);
   trunk[0][1] = h;
 
@@ -56,38 +74,66 @@ float[][] randomTrunk() {
       }
     }
 
-    trunk[i][1] = trunk[i-1][1] - 1;
+    r = random(0, 1);
+    if (r < 0.75) {
+      trunk[i][1] = trunk[i-1][1] - 1;
+    } else {
+      trunk[i][1] = trunk[i-1][1];
+    }
   }
 
   return trunk;
 }
 
-// jitter a given branch, for visual overlap
-float[][] jitter(float[][] branch) {
+float[][] branchOut(float[][] branch) {
+  int branchPoint = floor(random(n/4, n));
+  float threshold = random(0, 1);
 
-  float[][] newBranch = new float[n][n];
+  float hi, lo;
+  if (threshold < 0.5) {
+    hi = mid;
+    lo = 0;
+  } else {
+    hi = w;
+    lo = mid;
+  }
 
-  for (int i = 0; i < branch.length; i++) {
+  for (int i = branchPoint; i < branch.length; i++) {
     float r = random(0, 1);
 
-    float lo = .33;
-    float hi = .66;
-
-    if (r < lo) {
-      newBranch[i][0] = branch[i][0] - stepWidth;
-    } else if (r > hi) {
-      newBranch[i][0] = branch[i][0] + stepWidth;
+    if (r < threshold) {
+      if (branch[i-1][0] - stepWidth > lo) {
+        branch[i][0] = branch[i-1][0] - stepWidth;
+      }
     } else {
-      newBranch[i][0] = branch[i][0];
+      if (branch[i-1][0] + stepWidth < hi) {
+        branch[i][0] = branch[i-1][0] + stepWidth;
+      }
     }
-    newBranch[i][1] = branch[i][1];
 
+    float thresholdChange = random(-.5, .5);
+    if (threshold + thresholdChange > 0 && threshold + thresholdChange < 1) {
+      threshold = threshold + thresholdChange;
+    }
   }
-  return newBranch;
+  return branch;
+}
+
+// move a branch left or right, for overlap
+float[][] jitter(float[][] branch) {
+  float r = random(0, 1);
+  for (int i = 0; i < branch.length; i++) {
+    if (r < threshold) {
+      branch[i][0] = branch[i][0] - stepWidth;
+    } else {
+      branch[i][0] = branch[i][0] + stepWidth;
+    }
+  }
+  return branch;
 }
 
 void drawBranch(float[][] branch) {
-  strokeWeight(5);
+  strokeWeight(1);
   for (int i = 1; i < branch.length; i++) {
     line(branch[i-1][0], branch[i-1][1], branch[i][0], branch[i][1]);
   }
